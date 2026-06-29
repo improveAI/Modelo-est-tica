@@ -1,4 +1,4 @@
-# Lumière — Site de Estética com Agendamento
+ Site de Estética com Agendamento
 
 Site institucional + sistema de agendamento online para clínicas de estética e
 beleza, com um painel de gestão completo pra dona do negócio acompanhar a
