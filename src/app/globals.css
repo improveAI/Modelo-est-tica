@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-cormorant: "Cormorant Garamond", Georgia, serif;
+  --font-jost: "Jost", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-champagne text-cacau font-body antialiased;
+  }
+  ::selection {
+    @apply bg-ouro/30 text-cacau;
+  }
+}
+
+@layer components {
+  .eyebrow {
+    @apply font-mono text-[11px] tracking-widest2 uppercase text-ouro;
+  }
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 bg-cacau text-champagne
+           font-body text-sm uppercase tracking-[0.1em] px-7 py-3.5 rounded-full
+           transition-all duration-300 hover:bg-ouro hover:text-cacau;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 border border-ouro/50
+           text-cacau font-body text-sm uppercase tracking-[0.1em] px-7 py-3.5
+           rounded-full transition-all duration-300 hover:bg-ouro hover:text-champagne;
+  }
+  .hairline {
+    @apply border-t border-linha;
+  }
+}
+
+/* respeita quem prefere menos movimento */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation: none !important;
+    transition: none !important;
+  }
+  html {
+    scroll-behavior: auto;
+  }
+}

@@ -1,0 +1,58 @@
+// ============================================================
+// Tipos centrais do projeto
+// ============================================================
+
+export interface Servico {
+  id: string;
+  nome: string;
+  descricao: string;
+  duracao: number; // minutos
+  preco: number; // reais
+  categoria: string;
+}
+
+export interface Contato {
+  whatsapp: string;
+  telefone: string;
+  email: string;
+  endereco: string;
+  instagram: string;
+  mapsLink: string;
+}
+
+export interface SiteConfig {
+  nome: string;
+  tagline: string;
+  cidade: string;
+  fundadoEm: string;
+  contato: Contato;
+  horario: string;
+  servicos: Servico[];
+  senhaPainel: string;
+}
+
+export interface Profissional {
+  id: string;
+  nome: string;
+  especialidade: string;
+  diasTrabalho: number[]; // 0=Dom ... 6=Sáb
+  inicio: string; // "09:00"
+  fim: string; // "19:00"
+}
+
+export type StatusAgendamento = "confirmado" | "concluido" | "faltou" | "cancelado";
+
+export interface Agendamento {
+  id: string;
+  servicoId: string;
+  servicoNome: string;
+  preco: number;
+  profissionalId: string;
+  profissionalNome: string;
+  dia: string; // AAAA-MM-DD
+  hora: string; // "14:30"
+  cliente: string;
+  telefone: string;
+  status: StatusAgendamento;
+  criadoEm: string;
+}
