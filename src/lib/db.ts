@@ -1,5 +1,6 @@
 import { supabase, supabaseAtivo } from "./supabase";
-import type { Profissional, Agendamento, StatusAgendamento } from "@/types";
+import type { Profissional, Agendamento, StatusAgendamento, Servico } from "@/types";
+import { servicosPadrao } from "@/data/config";
 
 /**
  * Camada de dados.
@@ -13,6 +14,8 @@ import type { Profissional, Agendamento, StatusAgendamento } from "@/types";
 // ------------------------------------------------------------------
 // Fallback em memória (usado só quando o Supabase está desligado)
 // ------------------------------------------------------------------
+
+let servicosMemoria: Servico[] = servicosPadrao.map((s) => ({ ...s }));
 
 let profissionaisMemoria: Profissional[] = [
   {
@@ -253,6 +256,173 @@ export async function removeAgendamento(id: string): Promise<boolean> {
 
   if (error) {
     console.error("Erro ao remover agendamento:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+// ------------------------------------------------------------------
+// Serviços
+// ------------------------------------------------------------------
+
+type ServicoRow = {
+  id: string;
+  nome: string;
+  descricao: string | null;
+  duracao: number;
+  preco: number;
+  categoria: string;
+  foto_url: string | null;
+  ativo: boolean;
+  criado_em: string;
+};
+
+function rowToServico(row: ServicoRow): Servico {
+  return {
+    id: row.id,
+    nome: row.nome,
+    descricao: row.descricao ?? "",
+    duracao: row.duracao,
+    preco: Number(row.preco),
+    categoria: row.categoria,
+    fotoUrl: row.foto_url ?? undefined,
+    ativo: row.ativo,
+  };
+}
+
+/** Somente serviços ativos — usado pelo site público. */
+export async function getServicos(): Promise<Servico[]> {
+  if (!supabaseAtivo || !supabase) {
+    return servicosMemoria.filter((s) => s.ativo !== false);
+  }
+
+  const { data, error } = await supabase
+    .from("servicos")
+    .select("*")
+    .eq("ativo", true)
+    .order("criado_em", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar serviços:", error.message);
+    return [];
+  }
+
+  return (data as ServicoRow[]).map(rowToServico);
+}
+
+/** Todos os serviços (ativos e inativos) — usado pelo painel. */
+export async function getServicosAdmin(): Promise<Servico[]> {
+  if (!supabaseAtivo || !supabase) {
+    return servicosMemoria;
+  }
+
+  const { data, error } = await supabase
+    .from("servicos")
+    .select("*")
+    .order("criado_em", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar serviços (admin):", error.message);
+    return [];
+  }
+
+  return (data as ServicoRow[]).map(rowToServico);
+}
+
+export async function addServico(
+  s: Omit<Servico, "id" | "ativo">
+): Promise<Servico | null> {
+  if (!supabaseAtivo || !supabase) {
+    const novo: Servico = { ...s, id: `s${Date.now()}`, ativo: true };
+    servicosMemoria = [...servicosMemoria, novo];
+    return novo;
+  }
+
+  const { data, error } = await supabase
+    .from("servicos")
+    .insert({
+      nome: s.nome,
+      descricao: s.descricao,
+      duracao: s.duracao,
+      preco: s.preco,
+      categoria: s.categoria,
+      foto_url: s.fotoUrl ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Erro ao cadastrar serviço:", error.message);
+    return null;
+  }
+
+  return rowToServico(data as ServicoRow);
+}
+
+export async function updateServico(
+  id: string,
+  s: Partial<Omit<Servico, "id" | "ativo">>
+): Promise<boolean> {
+  if (!supabaseAtivo || !supabase) {
+    servicosMemoria = servicosMemoria.map((x) =>
+      x.id === id ? { ...x, ...s } : x
+    );
+    return true;
+  }
+
+  const patch: Record<string, unknown> = {};
+  if (s.nome !== undefined) patch.nome = s.nome;
+  if (s.descricao !== undefined) patch.descricao = s.descricao;
+  if (s.duracao !== undefined) patch.duracao = s.duracao;
+  if (s.preco !== undefined) patch.preco = s.preco;
+  if (s.categoria !== undefined) patch.categoria = s.categoria;
+  if (s.fotoUrl !== undefined) patch.foto_url = s.fotoUrl;
+
+  const { error } = await supabase.from("servicos").update(patch).eq("id", id);
+
+  if (error) {
+    console.error("Erro ao atualizar serviço:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function toggleAtivoServico(
+  id: string,
+  ativo: boolean
+): Promise<boolean> {
+  if (!supabaseAtivo || !supabase) {
+    servicosMemoria = servicosMemoria.map((s) =>
+      s.id === id ? { ...s, ativo } : s
+    );
+    return true;
+  }
+
+  const { error } = await supabase
+    .from("servicos")
+    .update({ ativo })
+    .eq("id", id);
+
+  if (error) {
+    console.error("Erro ao alterar ativo do serviço:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+export async function removeServico(id: string): Promise<boolean> {
+  if (!supabaseAtivo || !supabase) {
+    servicosMemoria = servicosMemoria.filter((s) => s.id !== id);
+    return true;
+  }
+
+  const { error } = await supabase.from("servicos").delete().eq("id", id);
+
+  if (error) {
+    console.error("Erro ao remover serviço:", error.message);
     return false;
   }
 
