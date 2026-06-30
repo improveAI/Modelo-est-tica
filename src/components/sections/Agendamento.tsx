@@ -3,12 +3,12 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Check } from "lucide-react";
-import { siteConfig } from "@/data/config";
 import { brl, DIAS, HORAS } from "@/lib/utils";
 import { Reveal } from "@/components/ui/Reveal";
 import type { Servico, Profissional, Agendamento } from "@/types";
 
 interface Props {
+  servicos: Servico[];
   profissionais: Profissional[];
   onAgendar: (a: Omit<Agendamento, "id" | "criadoEm" | "status">) => void;
 }
@@ -31,7 +31,7 @@ const vazio: Escolha = {
   telefone: "",
 };
 
-export function Agendamento({ profissionais, onAgendar }: Props) {
+export function Agendamento({ servicos, profissionais, onAgendar }: Props) {
   const [etapa, setEtapa] = useState(1);
   const [e, setE] = useState<Escolha>(vazio);
   const [pronto, setPronto] = useState(false);
@@ -120,7 +120,7 @@ export function Agendamento({ profissionais, onAgendar }: Props) {
             {/* 1: serviço */}
             {etapa === 1 && (
               <Bloco titulo="Escolha o serviço">
-                {siteConfig.servicos.map((s) => (
+                {servicos.map((s) => (
                   <Opcao
                     key={s.id}
                     onClick={() => {
