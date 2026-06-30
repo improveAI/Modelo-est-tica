@@ -1,4 +1,4 @@
-import type { SiteConfig } from "@/types";
+import type { Servico, SiteConfig } from "@/types";
 
 /**
  * CONFIG DO CLIENTE
@@ -22,57 +22,69 @@ export const siteConfig: SiteConfig = {
 
   horario: "Ter a Sáb · 9h às 19h",
 
-  servicos: [
-    {
-      id: "limpeza-pele",
-      nome: "Limpeza de Pele Profunda",
-      descricao: "Higienização completa com extração e máscara calmante.",
-      duracao: 60,
-      preco: 180,
-      categoria: "Facial",
-    },
-    {
-      id: "design-sobrancelha",
-      nome: "Design de Sobrancelhas",
-      descricao: "Mapeamento facial e modelagem com cera ou pinça.",
-      duracao: 30,
-      preco: 70,
-      categoria: "Sobrancelhas",
-    },
-    {
-      id: "massagem-relaxante",
-      nome: "Massagem Relaxante",
-      descricao: "Técnica corporal para alívio de tensões e bem-estar.",
-      duracao: 60,
-      preco: 150,
-      categoria: "Corporal",
-    },
-    {
-      id: "drenagem",
-      nome: "Drenagem Linfática",
-      descricao: "Estimula a circulação e reduz a retenção de líquidos.",
-      duracao: 60,
-      preco: 160,
-      categoria: "Corporal",
-    },
-    {
-      id: "peeling",
-      nome: "Peeling de Diamante",
-      descricao: "Esfoliação que renova a pele e suaviza marcas.",
-      duracao: 45,
-      preco: 200,
-      categoria: "Facial",
-    },
-    {
-      id: "spa-maos",
-      nome: "Spa dos Pés e Mãos",
-      descricao: "Hidratação profunda, esfoliação e cuidado completo.",
-      duracao: 50,
-      preco: 120,
-      categoria: "Mãos & Pés",
-    },
-  ],
-
   // senha do painel da dona (demo — em produção isso vira auth do Supabase)
   senhaPainel: "admin123",
 };
+
+/**
+ * Serviços padrão — usados como fallback em memória quando o Supabase
+ * não está configurado (sem .env.local). Com o banco ativo, estes dados
+ * são ignorados e os serviços vêm da tabela "servicos" do Supabase.
+ * Use o INSERT seed em supabase/schema.sql para populá-la.
+ */
+export const servicosPadrao: Servico[] = [
+  {
+    id: "limpeza-pele",
+    nome: "Limpeza de Pele Profunda",
+    descricao: "Higienização completa com extração e máscara calmante.",
+    duracao: 60,
+    preco: 180,
+    categoria: "Facial",
+    ativo: true,
+  },
+  {
+    id: "design-sobrancelha",
+    nome: "Design de Sobrancelhas",
+    descricao: "Mapeamento facial e modelagem com cera ou pinça.",
+    duracao: 30,
+    preco: 70,
+    categoria: "Sobrancelhas",
+    ativo: true,
+  },
+  {
+    id: "massagem-relaxante",
+    nome: "Massagem Relaxante",
+    descricao: "Técnica corporal para alívio de tensões e bem-estar.",
+    duracao: 60,
+    preco: 150,
+    categoria: "Corporal",
+    ativo: true,
+  },
+  {
+    id: "drenagem",
+    nome: "Drenagem Linfática",
+    descricao: "Estimula a circulação e reduz a retenção de líquidos.",
+    duracao: 60,
+    preco: 160,
+    categoria: "Corporal",
+    ativo: true,
+  },
+  {
+    id: "peeling",
+    nome: "Peeling de Diamante",
+    descricao: "Esfoliação que renova a pele e suaviza marcas.",
+    duracao: 45,
+    preco: 200,
+    categoria: "Facial",
+    ativo: true,
+  },
+  {
+    id: "spa-maos",
+    nome: "Spa dos Pés e Mãos",
+    descricao: "Hidratação profunda, esfoliação e cuidado completo.",
+    duracao: 50,
+    preco: 120,
+    categoria: "Mãos & Pés",
+    ativo: true,
+  },
+];

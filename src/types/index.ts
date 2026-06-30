@@ -9,6 +9,8 @@ export interface Servico {
   duracao: number; // minutos
   preco: number; // reais
   categoria: string;
+  fotoUrl?: string;
+  ativo?: boolean; // undefined = true (serviços do config.ts não têm este campo)
 }
 
 export interface Contato {
@@ -27,7 +29,6 @@ export interface SiteConfig {
   fundadoEm: string;
   contato: Contato;
   horario: string;
-  servicos: Servico[];
   senhaPainel: string;
 }
 

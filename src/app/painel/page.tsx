@@ -1,41 +1,43 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Lock, LogOut, Users, CalendarDays } from "lucide-react";
+import { Lock, LogOut, Users, CalendarDays, Scissors } from "lucide-react";
 import { siteConfig } from "@/data/config";
 import {
   getProfissionais,
   getAgendamentos,
+  getServicosAdmin,
   addProfissional as dbAddProfissional,
   removeProfissional as dbRemoveProfissional,
   removeAgendamento as dbRemoveAgendamento,
   updateAgendamentoStatus as dbUpdateAgendamentoStatus,
+  addServico as dbAddServico,
+  updateServico as dbUpdateServico,
+  toggleAtivoServico as dbToggleAtivoServico,
+  removeServico as dbRemoveServico,
 } from "@/lib/db";
 import { AgendaTab } from "@/components/painel/AgendaTab";
 import { ProfissionaisTab } from "@/components/painel/ProfissionaisTab";
-import type { Agendamento, Profissional, StatusAgendamento } from "@/types";
+import { ServicosTab } from "@/components/painel/ServicosTab";
+import type { Agendamento, Profissional, Servico, StatusAgendamento } from "@/types";
 
-/**
- * Painel da dona.
- *
- * Lê e escreve direto no Supabase (via src/lib/db.ts), o mesmo banco
- * usado pela home — por isso os agendamentos feitos no site aparecem
- * aqui automaticamente.
- */
 export default function Painel() {
   const [logado, setLogado] = useState(false);
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState(false);
-  const [aba, setAba] = useState<"agenda" | "profissionais">("agenda");
+  const [aba, setAba] = useState<"agenda" | "profissionais" | "servicos">("agenda");
 
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
+  const [servicos, setServicos] = useState<Servico[]>([]);
 
   useEffect(() => {
     getProfissionais().then(setProfissionais);
     getAgendamentos().then(setAgendamentos);
+    getServicosAdmin().then(setServicos);
   }, []);
 
+  // --- Profissionais ---
   async function addProfissional(p: Omit<Profissional, "id">) {
     const novo = await dbAddProfissional(p);
     if (novo) setProfissionais((prev) => [...prev, novo]);
@@ -46,6 +48,7 @@ export default function Painel() {
     if (ok) setProfissionais((prev) => prev.filter((p) => p.id !== id));
   }
 
+  // --- Agendamentos ---
   async function excluirAgendamento(a: Agendamento) {
     const confirmado = window.confirm(
       `Excluir definitivamente o agendamento de ${a.cliente} (${a.servicoNome}, ${a.dia} às ${a.hora})? Essa ação não pode ser desfeita.`
@@ -60,6 +63,31 @@ export default function Painel() {
     if (ok) {
       setAgendamentos((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a)));
     }
+  }
+
+  // --- Serviços ---
+  async function adicionarServico(s: Omit<Servico, "id" | "ativo">) {
+    const novo = await dbAddServico(s);
+    if (novo) setServicos((prev) => [...prev, novo]);
+  }
+
+  async function editarServico(id: string, s: Partial<Omit<Servico, "id" | "ativo">>) {
+    const ok = await dbUpdateServico(id, s);
+    if (ok) setServicos((prev) => prev.map((x) => (x.id === id ? { ...x, ...s } : x)));
+  }
+
+  async function toggleServico(id: string, ativo: boolean) {
+    const ok = await dbToggleAtivoServico(id, ativo);
+    if (ok) setServicos((prev) => prev.map((x) => (x.id === id ? { ...x, ativo } : x)));
+  }
+
+  async function removerServico(s: Servico) {
+    const confirmado = window.confirm(
+      `Remover o serviço "${s.nome}"? Essa ação não pode ser desfeita.`
+    );
+    if (!confirmado) return;
+    const ok = await dbRemoveServico(s.id);
+    if (ok) setServicos((prev) => prev.filter((x) => x.id !== s.id));
   }
 
   if (!logado) {
@@ -119,6 +147,9 @@ export default function Painel() {
           <AbaBtn ativo={aba === "agenda"} onClick={() => setAba("agenda")}>
             <CalendarDays size={16} /> Agenda
           </AbaBtn>
+          <AbaBtn ativo={aba === "servicos"} onClick={() => setAba("servicos")}>
+            <Scissors size={16} /> Serviços
+          </AbaBtn>
           <AbaBtn ativo={aba === "profissionais"} onClick={() => setAba("profissionais")}>
             <Users size={16} /> Profissionais
           </AbaBtn>
@@ -131,6 +162,16 @@ export default function Painel() {
               profissionais={profissionais}
               onStatusChange={alterarStatusAgendamento}
               onExcluir={excluirAgendamento}
+            />
+          )}
+
+          {aba === "servicos" && (
+            <ServicosTab
+              servicos={servicos}
+              onAdd={adicionarServico}
+              onUpdate={editarServico}
+              onToggleAtivo={toggleServico}
+              onRemove={removerServico}
             />
           )}
 

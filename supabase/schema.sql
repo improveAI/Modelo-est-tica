@@ -3,6 +3,36 @@
 -- Rode isto no SQL Editor do Supabase quando for ligar o banco.
 -- ============================================================
 
+-- Serviços
+create table if not exists servicos (
+  id uuid primary key default gen_random_uuid(),
+  nome text not null,
+  descricao text,
+  duracao int not null default 60,         -- minutos
+  preco numeric not null default 0,
+  categoria text not null default '',
+  foto_url text,                            -- URL pública da imagem (opcional)
+  ativo boolean not null default true,
+  criado_em timestamptz not null default now()
+);
+
+alter table servicos enable row level security;
+
+-- leitura pública (o site lista serviços ativos)
+create policy "leitura publica servicos" on servicos
+  for select using (true);
+
+-- painel pode inserir, atualizar e remover serviços
+-- (sem auth real ainda; restringir a authenticated quando fizer login Supabase)
+create policy "painel cadastra servico" on servicos
+  for insert with check (true);
+
+create policy "painel atualiza servico" on servicos
+  for update using (true) with check (true);
+
+create policy "painel remove servico" on servicos
+  for delete using (true);
+
 -- Profissionais
 create table if not exists profissionais (
   id uuid primary key default gen_random_uuid(),
@@ -85,3 +115,16 @@ alter table agendamentos
 
 create policy "painel atualiza status agendamento" on agendamentos
   for update using (true) with check (true);
+
+-- ============================================================
+-- Seed: serviços iniciais (rode uma única vez após criar a tabela)
+-- Adapte nomes, preços e descrições para cada cliente.
+-- ============================================================
+insert into servicos (nome, descricao, duracao, preco, categoria, ativo) values
+  ('Limpeza de Pele Profunda',  'Higienização completa com extração e máscara calmante.',      60, 180, 'Facial',        true),
+  ('Design de Sobrancelhas',    'Mapeamento facial e modelagem com cera ou pinça.',             30,  70, 'Sobrancelhas',  true),
+  ('Massagem Relaxante',        'Técnica corporal para alívio de tensões e bem-estar.',         60, 150, 'Corporal',      true),
+  ('Drenagem Linfática',        'Estimula a circulação e reduz a retenção de líquidos.',        60, 160, 'Corporal',      true),
+  ('Peeling de Diamante',       'Esfoliação que renova a pele e suaviza marcas.',               45, 200, 'Facial',        true),
+  ('Spa dos Pés e Mãos',        'Hidratação profunda, esfoliação e cuidado completo.',          50, 120, 'Mãos & Pés',   true)
+on conflict do nothing;
