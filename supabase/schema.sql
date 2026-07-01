@@ -3,6 +3,30 @@
 -- Rode isto no SQL Editor do Supabase quando for ligar o banco.
 -- ============================================================
 
+-- Bloqueios de horário
+create table if not exists bloqueios (
+  id uuid primary key default gen_random_uuid(),
+  profissional_id uuid references profissionais(id) on delete cascade,
+  -- null = bloqueia para todas as profissionais
+  dia date not null,
+  hora_inicio text not null,  -- ex: "09:00"
+  hora_fim text not null,     -- ex: "11:00" (bloqueia slots >= inicio e < fim)
+  motivo text,
+  criado_em timestamptz not null default now()
+);
+
+alter table bloqueios enable row level security;
+
+-- leitura pública (o site usa pra filtrar horas disponíveis)
+create policy "leitura publica bloqueios" on bloqueios
+  for select using (true);
+
+create policy "painel cadastra bloqueio" on bloqueios
+  for insert with check (true);
+
+create policy "painel remove bloqueio" on bloqueios
+  for delete using (true);
+
 -- Serviços
 create table if not exists servicos (
   id uuid primary key default gen_random_uuid(),

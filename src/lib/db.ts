@@ -1,5 +1,5 @@
 import { supabase, supabaseAtivo } from "./supabase";
-import type { Profissional, Agendamento, StatusAgendamento, Servico } from "@/types";
+import type { Profissional, Agendamento, StatusAgendamento, Servico, Bloqueio } from "@/types";
 import { servicosPadrao } from "@/data/config";
 
 /**
@@ -16,6 +16,7 @@ import { servicosPadrao } from "@/data/config";
 // ------------------------------------------------------------------
 
 let servicosMemoria: Servico[] = servicosPadrao.map((s) => ({ ...s }));
+let bloqueiosMemoria: Bloqueio[] = [];
 
 let profissionaisMemoria: Profissional[] = [
   {
@@ -427,4 +428,114 @@ export async function removeServico(id: string): Promise<boolean> {
   }
 
   return true;
+}
+
+// ------------------------------------------------------------------
+// Bloqueios de horário
+// ------------------------------------------------------------------
+
+type BloqueioRow = {
+  id: string;
+  profissional_id: string | null;
+  dia: string;
+  hora_inicio: string;
+  hora_fim: string;
+  motivo: string | null;
+  criado_em: string;
+};
+
+function rowToBloqueio(row: BloqueioRow): Bloqueio {
+  return {
+    id: row.id,
+    profissionalId: row.profissional_id,
+    dia: row.dia,
+    horaInicio: row.hora_inicio,
+    horaFim: row.hora_fim,
+    motivo: row.motivo ?? undefined,
+    criadoEm: row.criado_em,
+  };
+}
+
+/** Todos os bloqueios — usado pelo painel e pela home (para filtrar horas). */
+export async function getBloqueios(): Promise<Bloqueio[]> {
+  if (!supabaseAtivo || !supabase) {
+    return bloqueiosMemoria;
+  }
+
+  const { data, error } = await supabase
+    .from("bloqueios")
+    .select("*")
+    .order("dia", { ascending: true });
+
+  if (error) {
+    console.error("Erro ao buscar bloqueios:", error.message);
+    return [];
+  }
+
+  return (data as BloqueioRow[]).map(rowToBloqueio);
+}
+
+export async function addBloqueio(
+  b: Omit<Bloqueio, "id" | "criadoEm">
+): Promise<Bloqueio | null> {
+  if (!supabaseAtivo || !supabase) {
+    const novo: Bloqueio = {
+      ...b,
+      id: `bl${Date.now()}`,
+      criadoEm: new Date().toISOString(),
+    };
+    bloqueiosMemoria = [...bloqueiosMemoria, novo];
+    return novo;
+  }
+
+  const { data, error } = await supabase
+    .from("bloqueios")
+    .insert({
+      profissional_id: b.profissionalId,
+      dia: b.dia,
+      hora_inicio: b.horaInicio,
+      hora_fim: b.horaFim,
+      motivo: b.motivo ?? null,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Erro ao criar bloqueio:", error.message);
+    return null;
+  }
+
+  return rowToBloqueio(data as BloqueioRow);
+}
+
+export async function removeBloqueio(id: string): Promise<boolean> {
+  if (!supabaseAtivo || !supabase) {
+    bloqueiosMemoria = bloqueiosMemoria.filter((b) => b.id !== id);
+    return true;
+  }
+
+  const { error } = await supabase.from("bloqueios").delete().eq("id", id);
+
+  if (error) {
+    console.error("Erro ao remover bloqueio:", error.message);
+    return false;
+  }
+
+  return true;
+}
+
+/** Verifica se um slot de hora está bloqueado para um dado profissional e dia. */
+export function horaBloqueada(
+  hora: string,
+  dia: string,
+  profissionalId: string,
+  bloqueios: Bloqueio[]
+): boolean {
+  return bloqueios.some(
+    (b) =>
+      b.dia === dia &&
+      (b.profissionalId === null || b.profissionalId === profissionalId) &&
+      hora >= b.horaInicio &&
+      hora < b.horaFim
+  );
 }

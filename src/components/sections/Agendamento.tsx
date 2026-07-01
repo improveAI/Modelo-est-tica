@@ -5,11 +5,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, Check } from "lucide-react";
 import { brl, DIAS, HORAS } from "@/lib/utils";
 import { Reveal } from "@/components/ui/Reveal";
-import type { Servico, Profissional, Agendamento } from "@/types";
+import type { Servico, Profissional, Agendamento, Bloqueio } from "@/types";
 
 interface Props {
   servicos: Servico[];
   profissionais: Profissional[];
+  bloqueios: Bloqueio[];
   onAgendar: (a: Omit<Agendamento, "id" | "criadoEm" | "status">) => void;
 }
 
@@ -31,7 +32,7 @@ const vazio: Escolha = {
   telefone: "",
 };
 
-export function Agendamento({ servicos, profissionais, onAgendar }: Props) {
+export function Agendamento({ servicos, profissionais, bloqueios, onAgendar }: Props) {
   const [etapa, setEtapa] = useState(1);
   const [e, setE] = useState<Escolha>(vazio);
   const [pronto, setPronto] = useState(false);
@@ -50,7 +51,17 @@ export function Agendamento({ servicos, profissionais, onAgendar }: Props) {
   function horasLivres(prof: Profissional | null, dia: Date | null) {
     if (!prof || !dia) return [];
     if (!prof.diasTrabalho.includes(dia.getDay())) return [];
-    return HORAS.filter((h) => h >= prof.inicio && h < prof.fim);
+    const diaISO = `${dia.getFullYear()}-${String(dia.getMonth() + 1).padStart(2, "0")}-${String(dia.getDate()).padStart(2, "0")}`;
+    return HORAS.filter((h) => {
+      if (h < prof.inicio || h >= prof.fim) return false;
+      return !bloqueios.some(
+        (b) =>
+          b.dia === diaISO &&
+          (b.profissionalId === null || b.profissionalId === prof.id) &&
+          h >= b.horaInicio &&
+          h < b.horaFim
+      );
+    });
   }
 
   function confirmar() {

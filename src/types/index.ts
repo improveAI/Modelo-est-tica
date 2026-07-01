@@ -41,6 +41,16 @@ export interface Profissional {
   fim: string; // "19:00"
 }
 
+export interface Bloqueio {
+  id: string;
+  profissionalId: string | null; // null = bloqueia para todas
+  dia: string;        // AAAA-MM-DD
+  horaInicio: string; // "09:00"
+  horaFim: string;    // "11:00" — bloqueia slots >= inicio e < fim
+  motivo?: string;
+  criadoEm: string;
+}
+
 export type StatusAgendamento = "confirmado" | "concluido" | "faltou" | "cancelado";
 
 export interface Agendamento {

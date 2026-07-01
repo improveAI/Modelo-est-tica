@@ -7,6 +7,7 @@ import {
   getProfissionais,
   getAgendamentos,
   getServicosAdmin,
+  getBloqueios,
   addProfissional as dbAddProfissional,
   removeProfissional as dbRemoveProfissional,
   removeAgendamento as dbRemoveAgendamento,
@@ -15,11 +16,13 @@ import {
   updateServico as dbUpdateServico,
   toggleAtivoServico as dbToggleAtivoServico,
   removeServico as dbRemoveServico,
+  addBloqueio as dbAddBloqueio,
+  removeBloqueio as dbRemoveBloqueio,
 } from "@/lib/db";
 import { AgendaTab } from "@/components/painel/AgendaTab";
 import { ProfissionaisTab } from "@/components/painel/ProfissionaisTab";
 import { ServicosTab } from "@/components/painel/ServicosTab";
-import type { Agendamento, Profissional, Servico, StatusAgendamento } from "@/types";
+import type { Agendamento, Bloqueio, Profissional, Servico, StatusAgendamento } from "@/types";
 
 export default function Painel() {
   const [logado, setLogado] = useState(false);
@@ -30,11 +33,13 @@ export default function Painel() {
   const [profissionais, setProfissionais] = useState<Profissional[]>([]);
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [servicos, setServicos] = useState<Servico[]>([]);
+  const [bloqueios, setBloqueios] = useState<Bloqueio[]>([]);
 
   useEffect(() => {
     getProfissionais().then(setProfissionais);
     getAgendamentos().then(setAgendamentos);
     getServicosAdmin().then(setServicos);
+    getBloqueios().then(setBloqueios);
   }, []);
 
   // --- Profissionais ---
@@ -79,6 +84,17 @@ export default function Painel() {
   async function toggleServico(id: string, ativo: boolean) {
     const ok = await dbToggleAtivoServico(id, ativo);
     if (ok) setServicos((prev) => prev.map((x) => (x.id === id ? { ...x, ativo } : x)));
+  }
+
+  // --- Bloqueios ---
+  async function criarBloqueio(b: Omit<Bloqueio, "id" | "criadoEm">) {
+    const novo = await dbAddBloqueio(b);
+    if (novo) setBloqueios((prev) => [...prev, novo]);
+  }
+
+  async function excluirBloqueio(id: string) {
+    const ok = await dbRemoveBloqueio(id);
+    if (ok) setBloqueios((prev) => prev.filter((b) => b.id !== id));
   }
 
   async function removerServico(s: Servico) {
@@ -160,8 +176,11 @@ export default function Painel() {
             <AgendaTab
               agendamentos={agendamentos}
               profissionais={profissionais}
+              bloqueios={bloqueios}
               onStatusChange={alterarStatusAgendamento}
               onExcluir={excluirAgendamento}
+              onAddBloqueio={criarBloqueio}
+              onRemoveBloqueio={excluirBloqueio}
             />
           )}
 
